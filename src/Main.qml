@@ -50,6 +50,10 @@ Window {
         y: (root.height - height) / 2 - Theme.space48
 
         speedKph: source.speedKph
+
+        // L'echelle vient du contrat, pas d'une constante recopiee : le
+        // cadran ne peut pas diverger du plafond physique de la source.
+        maxSpeedKph: source.maxSpeedKph
     }
 
     // Odometre sous le cadran, aligne sur son axe.
@@ -162,18 +166,32 @@ Window {
         }
     }
 
-    // Sert uniquement a demontrer la fluidite dans la video de demo.
-    // Aucune logique applicative ne doit dependre de cet objet.
+    // Compteur de FPS — instrument de mise au point, absent par defaut.
+    //
+    // Un affichage technique en surimpression n'a pas sa place sur un combine
+    // de production : le produit est propre par defaut, et l'instrument reste
+    // a un argument de distance pour mesurer sur la cible ou demontrer la
+    // fluidite dans une video.
+    //
+    //   --fps  : afficher le compteur
+    readonly property bool showFps:
+        Qt.application.arguments.indexOf("--fps") !== -1
+
     FrameAnimation {
         id: frameClock
 
-        running: true
+        // Ne tourne pas quand le compteur n'est pas affiche : inutile de
+        // reveiller une animation par image pour une valeur que personne
+        // ne lit.
+        running: root.showFps
     }
 
     Text {
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.margins: Theme.layoutMargin
+
+        visible: root.showFps
 
         text: frameClock.smoothFrameTime > 0
             ? Math.round(1 / frameClock.smoothFrameTime) + qsTr(" FPS")

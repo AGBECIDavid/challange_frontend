@@ -2,31 +2,103 @@
 
 Tableau de bord de navette électrique 8 places, en Qt 6 / QML.
 
+![Tableau de bord de la navette en fonctionnement](docs/dashboard.png)
+
 ## Contexte et périmètre
 
 Interface de conduite pour une navette électrique 8 places, destinée à un
 Raspberry Pi 4 équipé d'un écran 10 pouces en 1280x800. Le projet couvre le
 frontend seul : aucun backend, aucune lecture matérielle, aucun code CAN.
 
+Les conventions de code et les règles de contribution sont dans
+[`CONVENTIONS.md`](CONVENTIONS.md).
+
 ## Prérequis
 
-Qt 6.8.3 LTS pour le développement, **Qt 6.7 minimum** à l'exécution ; CMake
-3.21+ et Ninja pour la compilation.
+**Qt 6.7 minimum** à l'exécution. Ce seuil est le maximum de deux
+contraintes : `Settings` dans le module `QtCore` exige 6.5, et `font.features`
+— les chiffres tabulaires, sans lesquels la valeur de vitesse saute
+latéralement à chaque rafraîchissement — exige 6.7.
 
-Le minimum de 6.7 est le maximum de deux contraintes : `Settings` dans le
-module `QtCore` exige 6.5, et `font.features` — les chiffres tabulaires, sans
-lesquels la valeur de vitesse saute latéralement à chaque rafraîchissement —
-exige 6.7. La cible, Raspberry Pi OS Trixie, livre Qt 6.8.2.
+Il faut aussi un compilateur C++, **CMake ≥ 3.21** et **Ninja**.
 
-Qt 6.8.3 est installé hors système, dans `$HOME/Qt`, via `aqtinstall` — le Qt
-de la distribution n'est pas utilisé. `CMAKE_PREFIX_PATH` doit donc désigner
-cette installation.
+Deux voies d'installation, selon ce que fournit la distribution.
+
+### a) Paquets de la distribution — quand elle fournit Qt ≥ 6.7
+
+| Distribution | Qt fourni | Convient ? |
+|---|---|---|
+| Debian 13 (Trixie) | 6.8.2 | **oui** |
+| Raspberry Pi OS Trixie — la cible | 6.8.2 | **oui** |
+| Debian 12 (Bookworm) | 6.4.2 | non, trop ancien |
+| Ubuntu 24.04 LTS | 6.4.2 | non, trop ancien |
+
+```sh
+sudo apt install build-essential cmake ninja-build \
+    qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools \
+    qml-qt6 \
+    qml6-module-qtcore qml6-module-qtquick qml6-module-qtquick-shapes \
+    qml6-module-qtquick-window qml6-module-qttest
+```
+
+Les modules `qml6-module-*` correspondent exactement aux imports du projet :
+`QtCore`, `QtQuick`, `QtQuick.Shapes`, `QtQuick.Window`, et `QtTest` pour la
+suite de tests.
+
+**Attention** — sur Debian et dérivés, les outils Qt 6 sont installés dans
+`/usr/lib/qt6/bin`, qui **n'est pas dans le `PATH`**. Soit on les appelle par
+leur chemin complet, soit on ajoute une fois pour toutes :
+
+```sh
+echo 'export PATH="/usr/lib/qt6/bin:$PATH"' >> ~/.bashrc   # ou ~/.zshrc
+```
+
+Avec cette voie, `CMAKE_PREFIX_PATH` est inutile : CMake trouve Qt tout seul.
+
+```sh
+cmake -S . -B build -G Ninja
+```
+
+### b) Installation isolée via aqtinstall — quand la distribution est trop ancienne
+
+`aqtinstall` télécharge les binaires officiels de Qt dans `$HOME`, sans
+toucher au système ni demander `sudo`.
+
+```sh
+sudo apt install build-essential cmake ninja-build pipx
+pipx install aqtinstall
+aqt install-qt linux desktop 6.8.3 linux_gcc_64 -m qtshadertools --outputdir "$HOME/Qt"
+```
+
+Environ 195 Mo de téléchargement et 1,5 Go sur disque. Le paquet de base
+contient déjà `qtbase`, `qtdeclarative`, `qtsvg` et `qtwayland` ; seul
+`qtshadertools` doit être demandé explicitement.
+
+`CMAKE_PREFIX_PATH` doit alors désigner cette installation :
+
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$HOME/Qt/6.8.3/gcc_64"
+```
+
+C'est la voie utilisée pour développer ce projet, sur une distribution dont le
+Qt système est en avance sur la cible.
 
 ## Lancement
 
-Deux modes sont supportés en permanence.
+Deux modes sont supportés en permanence. Chaque commande est donnée dans les
+deux voies d'installation ; il n'y a rien à substituer.
 
-**Mode 1 — build CMake**, le mode de production :
+### Mode 1 — build CMake, le mode de production
+
+**Qt de la distribution** (voie a) — CMake trouve Qt tout seul :
+
+```sh
+cmake -S . -B build -G Ninja
+cmake --build build
+./build/dashboard
+```
+
+**Qt via aqtinstall** (voie b) :
 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$HOME/Qt/6.8.3/gcc_64"
@@ -34,7 +106,18 @@ cmake --build build
 ./build/dashboard
 ```
 
-**Mode 2 — runtime QML**, pour itérer sans compiler :
+Le binaire produit est identique dans les deux cas : seule la configuration
+diffère.
+
+### Mode 2 — runtime QML, pour itérer sans compiler
+
+**Qt de la distribution** (voie a) :
+
+```sh
+/usr/lib/qt6/bin/qml src/Main.qml
+```
+
+**Qt via aqtinstall** (voie b) :
 
 ```sh
 "$HOME/Qt/6.8.3/gcc_64/bin/qml" src/Main.qml
@@ -42,18 +125,43 @@ cmake --build build
 
 Sur une machine sans affichage, préfixer par `QT_QPA_PLATFORM=offscreen`.
 
-### Plein écran
+### Options de lancement
+
+Les deux drapeaux suivent le même principe : **le défaut correspond au
+produit**, et c'est le développement qui demande une option.
+
+| Drapeau | Effet |
+|---|---|
+| `--windowed` | Démarre en fenêtre au lieu du plein écran |
+| `--fps` | Affiche le compteur d'images par seconde en haut à droite |
 
 L'application démarre **en plein écran sans décoration**, ce qui est le mode
 de déploiement réel : sur le Raspberry Pi il n'y a pas de gestionnaire de
-fenêtres, la fenêtre doit occuper l'écran. Le défaut correspond donc au
-produit, et c'est le développement qui demande une option.
+fenêtres, la fenêtre doit occuper l'écran. La touche **Échap** en sort à
+chaud.
 
-| | |
-|---|---|
-| Démarrer en fenêtre | `./build/dashboard --windowed` |
-| Idem en mode 2 | `qml src/Main.qml -- --windowed` — le `--` est nécessaire, sans quoi l'outil `qml` prend l'option pour un second fichier à charger |
-| Sortir du plein écran à chaud | touche **Échap** |
+Le compteur de FPS est un instrument de mise au point : il sert à mesurer sur
+la cible et à démontrer la fluidité dans la vidéo de démonstration, pas à
+meubler un combiné de conduite. Il est donc absent par défaut, et l'animation
+qui l'alimente ne tourne pas quand il n'est pas affiché.
+
+En mode 1, les drapeaux se passent directement, quelle que soit la voie
+d'installation :
+
+```sh
+./build/dashboard --windowed --fps
+```
+
+En mode 2, le `--` est nécessaire, sans quoi l'outil `qml` prend l'option pour
+un second fichier à charger.
+
+```sh
+# Qt de la distribution (voie a)
+/usr/lib/qt6/bin/qml src/Main.qml -- --windowed --fps
+
+# Qt via aqtinstall (voie b)
+"$HOME/Qt/6.8.3/gcc_64/bin/qml" src/Main.qml -- --windowed --fps
+```
 
 ### Commande
 
@@ -78,6 +186,7 @@ dernière ne faisant que lire et lisser des propriétés.
 
 | Fichier | Rôle |
 |---|---|
+| `src/main.cpp` | Point d'entrée. Instancie le moteur QML et charge le module. Aucune logique applicative. |
 | `src/VehicleModel.js` | Modèle physique pur, sans état ni effet de bord. Testable seul. |
 | `src/SimulatedDataSource.qml` | Source de données. Publie le contrat, intègre le modèle à 20 Hz. |
 | `src/OdometerStorage.qml` | Persistance de l'odomètre, isolée derrière un `Loader`. |
@@ -89,7 +198,7 @@ dernière ne faisant que lire et lisser des propriétés.
 | `assets/fonts/` | Police Inter (OFL), embarquée dans le binaire. |
 
 Le langage visuel — couleurs, typographie, espacement, durées, contraintes GPU
-— est spécifié dans `.claude/skills/hmi-design/SKILL.md`, qui fait autorité.
+— est spécifié dans [`DESIGN.md`](DESIGN.md), qui fait autorité.
 Aucune valeur visuelle ne doit apparaître en dur dans un composant : tout passe
 par `src/Theme.js`.
 
@@ -116,10 +225,24 @@ réelle, doit les fournir.
 
 | Champ | Type | Plage | Unité | Sens |
 |---|---|---|---|---|
-| `speedKph` | `real` | 0 à 50 | km/h | lecture seule |
+| `speedKph` | `real` | 0 à `maxSpeedKph` | km/h | lecture seule |
+| `maxSpeedKph` | `real` | > 0 | km/h | lecture seule, constante pour une source donnée |
 | `odometerKm` | `real` | ≥ 0 | km | lecture seule, monotone croissant |
 | `throttlePercent` | `real` | 0 à 100 | % | lecture seule |
 | `sourceValid` | `bool` | — | — | lecture seule, `false` si la source est défaillante |
+
+`maxSpeedKph` fait partie du contrat, et non de l'affichage. La raison est la
+même que pour le reste : **un bus CAN définit aussi la plage de ses signaux**,
+pas seulement leur valeur courante. La borne d'échelle appartient donc à la
+source qui publie la grandeur, pas au cadran qui la dessine.
+
+Concrètement, cela supprime une duplication : la vitesse maximale était écrite
+à deux endroits — `MAX_SPEED_KPH` dans `VehicleModel.js` et la valeur par
+défaut de `maxSpeedKph` dans `SpeedDial.qml` — sans rien pour garantir qu'elles
+restent d'accord. `SimulatedDataSource` publie désormais celle du modèle, et
+`Main.qml` la câble sur le cadran. `SpeedDial` conserve sa valeur par défaut,
+qui ne sert plus qu'à le garder utilisable seul, en isolation ou dans un test :
+il n'importe toujours pas la physique.
 
 ### Entrée de simulation — propre au simulateur
 
@@ -149,10 +272,11 @@ Ce choix est structurel, pas esthétique. Une trame CAN périodique de vitesse
 tourne typiquement entre 10 et 100 Hz ; 20 Hz est réaliste pour ce type de
 véhicule. En publiant dès maintenant à cette cadence, on garantit que
 l'affichage est conçu pour une source **lente et discrète**, et non pour une
-animation continue. Le rendu tourne à 60 Hz avec une source à 20 Hz : c'est
-`Behavior`, côté affichage, qui interpole entre deux trames. La démonstration
-que le rendu ne dépend pas de la cadence de la source est ainsi faite par
-construction.
+animation continue. Le rendu tourne à la fréquence de l'écran — 60 Hz sur la
+cible, davantage sur une machine de développement — pendant que la source
+publie à 20 Hz : c'est `Behavior`, côté affichage, qui interpole entre deux
+trames. La démonstration que le rendu ne dépend pas de la cadence de la source
+est ainsi faite par construction.
 
 L'écriture de l'odomètre sur disque est délibérément découplée : **0,2 Hz**
 (toutes les 5 s) au lieu de 20 Hz, pour ménager la carte SD du Raspberry Pi.
@@ -200,7 +324,7 @@ dépôt et il n'est pas prévu d'en écrire ici.
 ### Ce qu'il y aurait à remplacer
 
 Un seul fichier : `src/SimulatedDataSource.qml`, à substituer par un
-`CanDataSource` qui publierait **les mêmes quatre sorties**.
+`CanDataSource` qui publierait **les mêmes cinq sorties**.
 
 | Élément actuel | Devient |
 |---|---|
@@ -208,6 +332,7 @@ Un seul fichier : `src/SimulatedDataSource.qml`, à substituer par un
 | `throttleInput` (écriture IHM) | **Disparaît** — la pédale vient du VCU |
 | `throttlePercent` calculé depuis `throttleInput` | Décodé depuis la trame VCU |
 | `speedKph` intégré localement | Décodé depuis la trame de vitesse |
+| `maxSpeedKph` = `VehicleModel.MAX_SPEED_KPH` | Borne haute déclarée par la base de signaux (fichier DBC), ou bridage du VCU |
 | `odometerKm` intégré localement | Décodé, ou toujours intégré si le bus ne le publie pas |
 | `sourceValid` = `_tick.running` | Watchdog sur l'âge de la dernière trame, compteur de séquence, CRC |
 
@@ -217,8 +342,11 @@ tard ne touche ni la propriété `sourceValid` ni l'affichage.
 
 ### Ce qu'il n'y aurait PAS à toucher
 
-- **Tout l'affichage.** Il ne lit que les quatre sorties du contrat, jamais
-  `throttleInput`. Aucun composant visuel ne change.
+- **Tout l'affichage.** Aucun composant visuel ne lit `throttleInput` : le
+  cadran lit `speedKph` et `maxSpeedKph`, la jauge lit `throttlePercent`,
+  l'odomètre lit `odometerKm`, l'indicateur de défaut lit `sourceValid`. Seul
+  `Main.qml`, qui câble les composants entre eux, écrit dans `throttleInput` —
+  et c'est précisément cette ligne de câblage qui disparaîtrait.
 - **`VehicleModel.js`** — soit il devient inutile si le bus publie la vitesse,
   soit il reste tel quel pour intégrer l'odomètre. Dans les deux cas il n'est
   pas modifié.
@@ -235,14 +363,42 @@ frontière de substitution est un fichier, pas une refonte.
 Tests QML exécutés par `qmltestrunner`, complétés par le lint `qmllint` qui
 doit passer sans aucun avertissement.
 
+**Qt de la distribution** (voie a) :
+
+```sh
+/usr/lib/qt6/bin/qmltestrunner -input tests
+cmake --build build --target all_qmllint
+```
+
+**Qt via aqtinstall** (voie b) :
+
 ```sh
 "$HOME/Qt/6.8.3/gcc_64/bin/qmltestrunner" -input tests
 cmake --build build --target all_qmllint
 ```
 
-`tests/tst_vehiclemodel.qml` teste le **modèle physique seul**, jamais l'IHM :
-saturation sous plein gaz, arrêt exact à zéro en roue libre, monotonie de
-l'odomètre, indépendance au pas de temps et pureté de `step()`.
+`all_qmllint` est une cible du build : elle utilise le `qmllint` de
+l'installation Qt trouvée par CMake, sans chemin à préciser.
+
+Sur une machine sans affichage, préfixer `qmltestrunner` par
+`QT_QPA_PLATFORM=offscreen`.
+
+| Fichier | Ce qu'il verrouille |
+|---|---|
+| `tests/tst_vehiclemodel.qml` | Le **modèle physique seul**, jamais l'IHM : saturation sous plein gaz, arrêt exact à zéro en roue libre, monotonie de l'odomètre, indépendance au pas de temps, pureté de `step()`. |
+| `tests/tst_speeddial.qml` | Le cadran sature exactement au plafond qu'on lui donne, quel qu'il soit ; les graduations suivent ce plafond ; le plafond publié par la source est bien celui du modèle. |
+| `tests/tst_throttlegauge.qml` | La jauge suit sa propriété `value`, y compris sur des variations rapprochées, et borne les valeurs hors plage. |
+
+Le lint et les tests couvrent des risques différents : `qmllint` attrape les
+erreurs de typage et de liaison à l'écriture, les tests attrapent les
+régressions de comportement. Les deux sont exigés sans exception.
+
+L'exécution des tests affiche une ligne
+`QML OdometerStorage: Failed to initialize QSettings instance`. Ce n'est pas
+un échec : `qmltestrunner` ne définit pas d'identité d'application, donc
+`QSettings` refuse de s'initialiser et la persistance de l'odomètre se dégrade
+à zéro — exactement le repli prévu par le `Loader`. La ligne est la preuve
+visible que ce repli fonctionne.
 
 ## Limites connues
 
@@ -259,7 +415,7 @@ l'odomètre, indépendance au pas de temps et pureté de `step()`.
   `opsz` figés), l'archive de distribution statique n'ayant pas pu être
   téléchargée dans un délai raisonnable. Le résultat est équivalent et reste
   sous licence OFL, dont le texte est fourni dans `assets/fonts/OFL.txt`.
-- Le token `weightSpeed` vaut **300**, alors que le skill spécifie 200. Le
-  projet n'embarque que les graisses 300 et 400, et 300 est par ailleurs le
-  meilleur choix de lisibilité en plein soleil (§1 du skill). Le skill reste à
-  mettre à jour sur ce point.
+- La fluidité n'a **pas** été mesurée sur la cible : le compteur de FPS relève
+  la fréquence de l'écran de développement, pas la marge disponible sur un
+  Raspberry Pi 4. Le seuil de 55 FPS du §5 de `DESIGN.md` reste à vérifier sur
+  matériel réel.

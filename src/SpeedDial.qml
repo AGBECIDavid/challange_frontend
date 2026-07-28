@@ -27,6 +27,10 @@ Item {
     // Plafond du cadran. Propriete du composant avec valeur par defaut, et
     // surtout PAS un import de VehicleModel.js : un composant d'affichage n'a
     // pas a connaitre la physique du vehicule (skill §8.3).
+    //
+    // En fonctionnement, Main.qml y cable source.maxSpeedKph, qui fait partie
+    // du contrat. La valeur par defaut ne sert qu'a garder le composant
+    // utilisable seul, en isolation ou dans un test.
     property real maxSpeedKph: 50
 
     implicitWidth: Theme.dialDiameter

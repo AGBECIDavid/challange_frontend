@@ -33,8 +33,17 @@ QtObject {
     // SORTIES — contrat commun a toute source
     // ----------------------------------------------------------------------
 
-    // Vitesse instantanee, en km/h, dans [0, MAX_SPEED_KPH].
+    // Vitesse instantanee, en km/h, dans [0, maxSpeedKph].
     readonly property real speedKph: _private.speedKph
+
+    // Borne haute de l'echelle de vitesse, en km/h.
+    //
+    // Elle appartient au CONTRAT et non a l'affichage : un bus CAN definit
+    // aussi la plage de ses signaux, pas seulement leur valeur courante. La
+    // declarer ici evite qu'une echelle de cadran et un plafond physique
+    // divergent silencieusement — ils etaient auparavant ecrits deux fois,
+    // dans VehicleModel.js et dans la valeur par defaut de SpeedDial.
+    readonly property real maxSpeedKph: VehicleModel.MAX_SPEED_KPH
 
     // Kilometrage total, en km, monotone croissant.
     readonly property real odometerKm: _private.odometerKm
