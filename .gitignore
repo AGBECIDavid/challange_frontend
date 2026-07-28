@@ -6,3 +6,7 @@ CMakeUserPresets.json
 compile_commands.json
 .claude/
 CLAUDE.md
+
+# Captures et videos de travail
+demo.mp4
+*.mp4
