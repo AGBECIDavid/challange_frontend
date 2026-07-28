@@ -1,0 +1,7 @@
+build/
+*.user
+CMakeUserPresets.json
+.cache/
+.qmlls.ini
+compile_commands.json
+.claude/
