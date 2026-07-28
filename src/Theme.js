@@ -21,8 +21,18 @@ var bg = "#07090C";
 // Zones tres rarement necessaires. A eviter.
 var surface = "#101318";
 
-// Arcs et graduations inactifs.
+// Piste de l'arc inactif, et fond de la jauge.
+// Contraste 1,28:1 sur bg : volontairement tres faible. Reserve a ce qui
+// n'est PAS une information — un repere de course, pas une donnee lue.
+// Ne jamais l'utiliser pour une graduation (voir tickMinor).
 var track = "#1E242C";
+
+// Graduations mineures. 2,55:1 sur bg.
+// track etait invisible en plein soleil, ce que le §1 du skill interdit :
+// les graduations portent une information, elles ne sont pas un decor.
+// Les graduations MAJEURES utilisent textSecondary (5,24:1), la meme couleur
+// que leurs propres libelles chiffres.
+var tickMinor = "#4A535E";
 
 // Vitesse, odometre. Contraste ~16:1 sur bg.
 var textPrimary = "#EAF0F5";
@@ -142,3 +152,19 @@ var layoutMargin = 48;
 
 // Position horizontale du centre du cadran, en fraction de la largeur (§7).
 var dialCenterXRatio = 0.45;
+
+// ---------------------------------------------------------------------------
+// Geometrie de la jauge d'accelerateur (skill §7)
+// ---------------------------------------------------------------------------
+
+// Largeur de la barre visible (§7 : « barre de 64 px de large »).
+var gaugeBarWidth = 64;
+
+// Largeur de la zone de saisie. Plus large que le visuel : le doigt d'un
+// conducteur n'est pas une souris.
+var gaugeTouchWidth = 96;
+
+// Hauteur de la barre. Le §7 ne la specifie pas ; retenue pour que la jauge
+// couvre approximativement l'etendue verticale du cadran, comme sur son
+// schema de mise en page.
+var gaugeHeight = 320;

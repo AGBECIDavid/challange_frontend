@@ -120,6 +120,11 @@ Item {
 
         // Arc actif. Seul sweepAngle est anime — jamais width/height, qui
         // forceraient la retessellation du chemin a chaque image.
+        //
+        // A sweepAngle nul, RoundCap ne laisse AUCUN point visible a l'origine
+        // du cadran : verifie par comparaison de rendus offscreen, identiques
+        // au pixel pres avec et sans masquage. Aucun seuil n'est donc
+        // necessaire ici.
         ShapePath {
             strokeColor: Theme.accent
             strokeWidth: Theme.dialActiveWidth
@@ -156,7 +161,11 @@ Item {
 
             width: major ? Theme.dialMajorTickWidth : Theme.dialMinorTickWidth
             height: major ? Theme.dialMajorTickLength : Theme.dialMinorTickLength
-            color: Theme.track
+
+            // Les graduations portent une information : elles ne peuvent pas
+            // utiliser track, invisible en plein soleil. Les majeures prennent
+            // la couleur de leurs propres libelles chiffres.
+            color: major ? Theme.textSecondary : Theme.tickMinor
             antialiasing: true
 
             // Positionne au sommet du cadran, puis pivote autour du centre.

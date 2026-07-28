@@ -42,6 +42,35 @@ cmake --build build
 
 Sur une machine sans affichage, préfixer par `QT_QPA_PLATFORM=offscreen`.
 
+### Plein écran
+
+L'application démarre **en plein écran sans décoration**, ce qui est le mode
+de déploiement réel : sur le Raspberry Pi il n'y a pas de gestionnaire de
+fenêtres, la fenêtre doit occuper l'écran. Le défaut correspond donc au
+produit, et c'est le développement qui demande une option.
+
+| | |
+|---|---|
+| Démarrer en fenêtre | `./build/dashboard --windowed` |
+| Idem en mode 2 | `qml src/Main.qml -- --windowed` — le `--` est nécessaire, sans quoi l'outil `qml` prend l'option pour un second fichier à charger |
+| Sortir du plein écran à chaud | touche **Échap** |
+
+### Commande
+
+L'organe de commande est la **jauge d'accélérateur** à droite de l'écran. Elle
+s'utilise en maintenant l'appui : la position du doigt ou du curseur dans la
+barre fixe l'accélération, et le glisser vertical la fait varier en continu.
+
+**Le relâchement ramène immédiatement à zéro, comme une pédale.** C'est ce qui
+produit la roue libre : le véhicule décélère alors selon `COAST_DECEL_MS2`.
+Un appui relâché aussitôt ne produit donc qu'une impulsion, sans effet visible
+— il n'existe pas de clic qui positionnerait durablement la commande.
+
+La **flèche haut** du clavier est un appoint, utile pour conduire d'une main
+pendant l'enregistrement d'une démonstration. Elle est automatiquement
+suspendue pendant une action sur la jauge, pour que les deux organes ne se
+disputent pas la commande.
+
 ## Architecture
 
 Découpage entre la couche de données simulées et la couche d'affichage, cette
@@ -54,7 +83,9 @@ dernière ne faisant que lire et lisser des propriétés.
 | `src/OdometerStorage.qml` | Persistance de l'odomètre, isolée derrière un `Loader`. |
 | `src/Theme.js` | Tokens de design. Source unique de toute valeur visuelle. |
 | `src/SpeedDial.qml` | Cadran de vitesse. Ne connaît ni la source ni la physique. |
-| `src/Main.qml` | Fenêtre principale. **Contient actuellement un harnais de mise au point temporaire.** |
+| `src/ThrottleGauge.qml` | Jauge d'accélérateur interactive. Bidirectionnelle : affiche une valeur, émet un signal. |
+| `src/Odometer.qml` | Kilométrage cumulatif. |
+| `src/Main.qml` | Fenêtre principale. Compose les composants et câble la source. |
 | `assets/fonts/` | Police Inter (OFL), embarquée dans le binaire. |
 
 Le langage visuel — couleurs, typographie, espacement, durées, contraintes GPU
@@ -215,12 +246,11 @@ l'odomètre, indépendance au pas de temps et pureté de `step()`.
 
 ## Limites connues
 
-- `src/Main.qml` contient un **harnais de mise au point temporaire** :
-  affichage brut des sorties et pilotage clavier (flèche haut). Il sera
-  remplacé à l'étape 4 par les cadrans et la jauge interactive.
 - Le freinage actif (`brakePercent`) n'est pas implémenté.
 - Aucune détection de panne de la source n'est implémentée ; `sourceValid`
-  reflète seulement l'état du timer.
+  reflète seulement l'état du timer, et l'indicateur « SOURCE INVALIDE »
+  n'apparaît donc jamais en fonctionnement normal. Le point d'accroche pour
+  un watchdog est en place (`_private.faulted`).
 - L'intégration de la vitesse est un Euler explicite, d'erreur en O(dt).
   L'écart entre `dt = 0,05` et `dt = 0,01` sur 10 s est de 0,12 % — acceptable
   pour un affichage, à revoir si le modèle devait servir à autre chose.

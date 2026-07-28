@@ -25,6 +25,8 @@ qt_add_qml_module(dashboard
     QML_FILES
         src/Main.qml
         src/SpeedDial.qml
+        src/ThrottleGauge.qml
+        src/Odometer.qml
         src/SimulatedDataSource.qml
         src/OdometerStorage.qml
         src/Theme.js
