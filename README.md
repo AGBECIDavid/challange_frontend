@@ -10,8 +10,13 @@ frontend seul : aucun backend, aucune lecture matérielle, aucun code CAN.
 
 ## Prérequis
 
-Qt 6.8.3 LTS pour le développement, Qt 6.5 minimum à l'exécution ; CMake 3.21+
-et Ninja pour la compilation.
+Qt 6.8.3 LTS pour le développement, **Qt 6.7 minimum** à l'exécution ; CMake
+3.21+ et Ninja pour la compilation.
+
+Le minimum de 6.7 est le maximum de deux contraintes : `Settings` dans le
+module `QtCore` exige 6.5, et `font.features` — les chiffres tabulaires, sans
+lesquels la valeur de vitesse saute latéralement à chaque rafraîchissement —
+exige 6.7. La cible, Raspberry Pi OS Trixie, livre Qt 6.8.2.
 
 Qt 6.8.3 est installé hors système, dans `$HOME/Qt`, via `aqtinstall` — le Qt
 de la distribution n'est pas utilisé. `CMAKE_PREFIX_PATH` doit donc désigner
@@ -47,7 +52,22 @@ dernière ne faisant que lire et lisser des propriétés.
 | `src/VehicleModel.js` | Modèle physique pur, sans état ni effet de bord. Testable seul. |
 | `src/SimulatedDataSource.qml` | Source de données. Publie le contrat, intègre le modèle à 20 Hz. |
 | `src/OdometerStorage.qml` | Persistance de l'odomètre, isolée derrière un `Loader`. |
+| `src/Theme.js` | Tokens de design. Source unique de toute valeur visuelle. |
+| `src/SpeedDial.qml` | Cadran de vitesse. Ne connaît ni la source ni la physique. |
 | `src/Main.qml` | Fenêtre principale. **Contient actuellement un harnais de mise au point temporaire.** |
+| `assets/fonts/` | Police Inter (OFL), embarquée dans le binaire. |
+
+Le langage visuel — couleurs, typographie, espacement, durées, contraintes GPU
+— est spécifié dans `.claude/skills/hmi-design/SKILL.md`, qui fait autorité.
+Aucune valeur visuelle ne doit apparaître en dur dans un composant : tout passe
+par `src/Theme.js`.
+
+### Police
+
+Inter, sous licence OFL, est **embarquée dans le binaire** plutôt que prise sur
+le système : le rendu doit être identique sur le Pi et sur la machine de
+développement. Deux graisses statiques sont fournies, Light (300) et Regular
+(400), chargées par `FontLoader` et enregistrées sous la même famille `Inter`.
 
 L'affichage ne calcule jamais de physique : il lit les sorties de la source et
 les lisse via `Behavior`. Cette règle est ce qui rend l'affichage indépendant
@@ -204,3 +224,12 @@ l'odomètre, indépendance au pas de temps et pureté de `step()`.
 - L'intégration de la vitesse est un Euler explicite, d'erreur en O(dt).
   L'écart entre `dt = 0,05` et `dt = 0,01` sur 10 s est de 0,12 % — acceptable
   pour un affichage, à revoir si le modèle devait servir à autre chose.
+- Les deux graisses statiques d'Inter sont produites par instanciation de la
+  police variable officielle (`fontTools varLib.instancer`, axes `wght` et
+  `opsz` figés), l'archive de distribution statique n'ayant pas pu être
+  téléchargée dans un délai raisonnable. Le résultat est équivalent et reste
+  sous licence OFL, dont le texte est fourni dans `assets/fonts/OFL.txt`.
+- Le token `weightSpeed` vaut **300**, alors que le skill spécifie 200. Le
+  projet n'embarque que les graisses 300 et 400, et 300 est par ailleurs le
+  meilleur choix de lisibilité en plein soleil (§1 du skill). Le skill reste à
+  mettre à jour sur ce point.

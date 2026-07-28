@@ -8,7 +8,7 @@ Tableau de bord de navette électrique 8 places, écrit en Qt 6 / QML.
 |---|---|
 | Cible | Raspberry Pi 4, Linux, écran 10 pouces, 1280x800 |
 | Qt de développement | 6.8.3 LTS (aligné sur Raspberry Pi OS Trixie, qui livre Qt 6.8.2) |
-| Version minimale supportée | **Qt 6.5** — exigée par `Settings` dans le module `QtCore` |
+| Version minimale supportée | **Qt 6.7** — maximum de deux contraintes : `Settings` dans le module `QtCore` (6.5) et `font.features` pour les chiffres tabulaires (6.7) |
 
 ## Périmètre
 

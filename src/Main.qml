@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import "Theme.js" as Theme
 
 Window {
     id: root
@@ -7,24 +8,42 @@ Window {
     width: 1280
     height: 800
     visible: true
-    color: "#12161c"
+    color: Theme.bg
     title: qsTr("Navette 8 places — tableau de bord")
+
+    // Polices bundlees. Chargees ici une seule fois : FontLoader enregistre la
+    // famille pour toute l'application. Les deux fichiers statiques
+    // s'enregistrent sous la meme famille « Inter », differenciee par le poids.
+    //
+    // Le chemin relatif fonctionne dans les DEUX modes de lancement : en mode
+    // compile, qt_add_qml_module conserve la hierarchie sous la racine du
+    // module ; en mode qml, il est resolu sur le systeme de fichiers.
+    FontLoader { source: "../assets/fonts/Inter-Light.ttf" }
+    FontLoader { source: "../assets/fonts/Inter-Regular.ttf" }
 
     SimulatedDataSource {
         id: source
     }
 
+    SpeedDial {
+        id: speedDial
+
+        x: root.width * Theme.dialCenterXRatio - width / 2
+        y: (root.height - height) / 2
+
+        // Le cadran ne lit que le contrat de sortie de la source.
+        speedKph: source.speedKph
+    }
+
     // =====================================================================
-    // HARNAIS TEMPORAIRE — A JETER A L'ETAPE 4
+    // HARNAIS TEMPORAIRE — A JETER A L'ETAPE 5
     //
-    // Tout ce qui suit, hormis le compteur de FPS, est un echafaudage de
-    // mise au point : affichage brut des sorties et pilotage clavier.
-    // La commande definitive est la jauge interactive de l'etape 4, et
-    // l'affichage definitif ses cadrans. Rien ici n'est destine a survivre.
+    // Le pilotage clavier ci-dessous est un echafaudage : l'organe de
+    // commande exige par l'enonce est la jauge d'accelerateur interactive,
+    // qui arrive a l'etape 5. Le clavier n'est qu'un appoint pour pouvoir
+    // exercer le cadran d'ici la.
     // =====================================================================
 
-    // Pilotage clavier provisoire : fleche haut maintenue = throttleInput
-    // monte vers 100, relachee = redescend vers 0.
     Item {
         id: keyboardHarness
 
@@ -48,8 +67,7 @@ Window {
         }
 
         // Rampe de pedale : 100 % en 400 ms, dans un sens comme dans l'autre.
-        // Evite un echelon brutal qui ne dirait rien du comportement du
-        // modele physique.
+        // Evite un echelon brutal qui ne dirait rien du comportement du modele.
         Timer {
             interval: 50
             running: true
@@ -68,50 +86,21 @@ Window {
         }
     }
 
-    // Affichage BRUT des quatre sorties du contrat. Aucune mise en forme :
-    // on veut lire les nombres, pas les contempler.
-    Column {
-        anchors.centerIn: parent
-        spacing: 8
+    // Rappel discret que la commande clavier est provisoire.
+    Text {
+        anchors.horizontalCenter: speedDial.horizontalCenter
+        anchors.top: speedDial.bottom
+        anchors.topMargin: Theme.space48
 
-        Text {
-            color: "#e6edf3"
-            font.family: "monospace"
-            font.pixelSize: 24
-            text: "speedKph        = " + source.speedKph.toFixed(3)
-        }
-
-        Text {
-            color: "#e6edf3"
-            font.family: "monospace"
-            font.pixelSize: 24
-            text: "odometerKm      = " + source.odometerKm.toFixed(6)
-        }
-
-        Text {
-            color: "#e6edf3"
-            font.family: "monospace"
-            font.pixelSize: 24
-            text: "throttlePercent = " + source.throttlePercent.toFixed(1)
-        }
-
-        Text {
-            color: source.sourceValid ? "#7ee787" : "#ff7b72"
-            font.family: "monospace"
-            font.pixelSize: 24
-            text: "sourceValid     = " + source.sourceValid
-        }
-
-        Text {
-            color: "#6e7681"
-            font.family: "monospace"
-            font.pixelSize: 16
-            text: qsTr("[harnais provisoire] fleche haut = accelerer")
-        }
+        text: qsTr("commande clavier provisoire — flèche haut pour accélérer")
+        color: Theme.textSecondary
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.sizeLabel
+        font.weight: Theme.weightLabel
     }
 
-    // Sert uniquement à mesurer la cadence de rendu pour la vidéo de démo.
-    // Aucune logique applicative ne doit dépendre de cet objet.
+    // Sert uniquement a demontrer la fluidite dans la video de demo.
+    // Aucune logique applicative ne doit dependre de cet objet.
     FrameAnimation {
         id: frameClock
 
@@ -121,11 +110,15 @@ Window {
     Text {
         anchors.top: parent.top
         anchors.right: parent.right
-        anchors.margins: 16
-        color: "#7ee787"
-        font.pixelSize: 18
+        anchors.margins: Theme.layoutMargin
+
         text: frameClock.smoothFrameTime > 0
-            ? Math.round(1 / frameClock.smoothFrameTime) + " FPS"
+            ? Math.round(1 / frameClock.smoothFrameTime) + qsTr(" FPS")
             : qsTr("— FPS")
+        color: Theme.textSecondary
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.sizeLabel
+        font.weight: Theme.weightLabel
+        font.features: ({ "tnum": 1 })
     }
 }
