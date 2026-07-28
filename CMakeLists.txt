@@ -19,7 +19,11 @@ qt_add_executable(dashboard src/main.cpp)
 qt_add_qml_module(dashboard
     URI Dashboard
     VERSION 1.0
-    QML_FILES src/Main.qml
+    QML_FILES
+        src/Main.qml
+        src/SimulatedDataSource.qml
+        src/OdometerStorage.qml
+        src/VehicleModel.js
 )
 
 target_link_libraries(dashboard PRIVATE Qt6::Quick)
