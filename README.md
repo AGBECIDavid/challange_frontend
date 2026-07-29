@@ -4,6 +4,8 @@ Tableau de bord de navette électrique 8 places, en Qt 6 / QML.
 
 ![Tableau de bord de la navette en fonctionnement](docs/dashboard.png)
 
+[▶ Vidéo de démonstration (45 s)](docs/demo.mp4) — accélération, inertie, décélération en roue libre.
+
 ## Contexte et périmètre
 
 Interface de conduite pour une navette électrique 8 places, destinée à un
