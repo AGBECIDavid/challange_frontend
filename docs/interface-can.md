@@ -28,6 +28,13 @@ Aucun code CAN n'existe dans ce dépôt et il n'est pas prévu d'en écrire ici 
 le périmètre du projet est le frontend seul. Ce document décrit ce qu'il
 faudrait faire, pas ce qui est fait.
 
+**Comment éprouver cette proposition** — [`validation-can.md`](validation-can.md)
+donne la procédure de test sur bus CAN virtuel (`vcan`). Sa §3 vérifie
+l'encodage décrit ci-dessous **sans aucun code d'application**, en émettant et
+relisant les trames sur le bus ; les résultats y sont mesurés, pas supposés.
+Ses §4 et §5 décrivent les tests à jouer le jour où `CanDataSource` existera,
+et la séance d'intégration conjointe avec le Groupe III.
+
 ---
 
 ## 1. Ce que l'affichage attend — la partie fermée
@@ -151,6 +158,26 @@ supprimés : une trame de 8 octets coûte le même temps de bus qu'une trame de
 beaucoup de bus s'en passent, le CAN ayant déjà son propre CRC au niveau
 trame. Il ne protège que contre une corruption *applicative*, en amont du
 contrôleur.
+
+**Polynôme proposé : CRC-8/SAE-J1850** — `poly 0x1D`, `init 0xFF`, non
+réfléchi, `xorout 0xFF`. C'est le CRC-8 des profils E2E d'AUTOSAR, donc celui
+que le Groupe III a le plus de chances d'utiliser déjà. Préciser le polynôme
+n'est pas un détail de forme : sans lui, « un CRC-8 » ne désigne aucun calcul
+en particulier et deux implémentations conformes à cette phrase produiraient
+des octets différents.
+
+Exemple de référence, vérifié : sur les octets `3A 0E 4A 03 00 00 00`
+(36,42 km/h, 37 %, séquence 3), le CRC vaut `0xB1`. La trame complète est
+donc `3A 0E 4A 03 00 00 00 B1`. D'autres valeurs de référence, produites et
+relues sur un bus virtuel, sont au §3.5 de
+[`validation-can.md`](validation-can.md).
+
+L'utilité de ce champ, présentée ci-dessus comme discutable, a reçu une
+confirmation empirique : lors de la rédaction de `validation-can.md`, des
+trames construites à la main avec un compteur de séquence incrémenté sans
+recalcul du CRC ont été émises sur le bus. Elles se décodaient en valeurs
+physiques parfaitement plausibles ; **seul le contrôle du CRC les a
+signalées.** C'est exactement le mode de défaillance visé.
 
 ### 3.2 `0x300` — `ODOMETER`, 4 octets, 1000 ms
 
@@ -442,6 +469,10 @@ Ces questions sont ouvertes. Aucune n'a de réponse arrêtée côté frontend.
 
 ## Références
 
+- [`validation-can.md`](validation-can.md) — procédure de test sur bus CAN
+  virtuel : vérification d'encodage exécutable dès aujourd'hui, tests de la
+  future source CAN, protocole d'intégration avec le Groupe III, et limites
+  honnêtes de l'approche.
 - [`README.md`](../README.md) — contrat de données, architecture, procédure de
   lancement.
 - [`CONVENTIONS.md`](../CONVENTIONS.md) — règles de contribution et périmètre

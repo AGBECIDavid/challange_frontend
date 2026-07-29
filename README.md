@@ -328,6 +328,12 @@ procédure de substitution pas à pas — est dans
 (Groupe III) : les identifiants, l'encodage et les périodes y sont inventés
 faute de connaître le format de trames réel.
 
+La procédure pour **éprouver** cette proposition sur un bus CAN virtuel
+(`vcan`) est dans [`docs/validation-can.md`](docs/validation-can.md) : mise en
+place du bus, vérification de l'encodage jouable dès aujourd'hui sans aucun
+code d'application, tests de la future source CAN, protocole d'intégration
+conjointe avec le Groupe III, et limites de l'approche.
+
 ### Ce qu'il y aurait à remplacer
 
 Un seul fichier : `src/SimulatedDataSource.qml`, à substituer par un
