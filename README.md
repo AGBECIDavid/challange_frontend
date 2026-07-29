@@ -321,6 +321,13 @@ et regroupe en un seul objet tout ce qui décrit l'instant courant.
 Cette section est **de la documentation**. Aucun code CAN n'existe dans ce
 dépôt et il n'est pas prévu d'en écrire ici.
 
+Le détail — trames proposées, encodage octet par octet, détection de défaut et
+procédure de substitution pas à pas — est dans
+[`docs/interface-can.md`](docs/interface-can.md). Ce document est une
+**proposition émise par l'équipe frontend**, à valider avec l'équipe firmware
+(Groupe III) : les identifiants, l'encodage et les périodes y sont inventés
+faute de connaître le format de trames réel.
+
 ### Ce qu'il y aurait à remplacer
 
 Un seul fichier : `src/SimulatedDataSource.qml`, à substituer par un
