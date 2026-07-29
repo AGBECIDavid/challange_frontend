@@ -90,6 +90,42 @@ Qt système est en avance sur la cible.
 Deux modes sont supportés en permanence. Chaque commande est donnée dans les
 deux voies d'installation ; il n'y a rien à substituer.
 
+### Raccourci — `scripts/setup.sh`
+
+`scripts/setup.sh` détecte Qt et les outils de compilation, vérifie les
+versions, puis configure et compile. Il choisit tout seul entre les deux voies
+d'installation ci-dessus et n'ajoute `-DCMAKE_PREFIX_PATH` que si c'est
+nécessaire.
+
+```sh
+./scripts/setup.sh                      # diagnostic, configuration, compilation
+./scripts/setup.sh --run --windowed --fps
+```
+
+| Option | Effet |
+|---|---|
+| *(aucune)* | Diagnostic, puis configuration et compilation. **Ne lance pas** l'application : compiler et lancer sont deux intentions différentes. |
+| `--check` | Diagnostic seul, ne compile rien |
+| `--run` | Compile puis lance ; tous les arguments qui suivent vont à l'application |
+| `--test` | Compile, puis joue `qmltestrunner` et `all_qmllint` |
+| `--clean` | Supprime `build/` avant de reconfigurer ; se combine aux autres |
+| `--help` | Aide |
+
+**Le script n'installe rien et ne demande jamais les droits administrateur.**
+C'est délibéré, et c'est un argument plutôt qu'une limitation : cloner un dépôt
+inconnu ne devrait jamais aboutir à une invite `sudo`. Quand une dépendance
+manque, il affiche la commande exacte — celle de la section Prérequis
+ci-dessus — et s'arrête. À vous de décider ce qui est installé sur votre
+machine. Il ne télécharge rien, ne modifie aucun profil shell, et n'écrit nulle
+part ailleurs que dans `build/`.
+
+Il fonctionne depuis n'importe quel répertoire courant, et peut être rejoué
+autant de fois que voulu sans effet cumulatif.
+
+**Ce raccourci ne remplace pas les commandes manuelles**, qui restent la
+référence et sont documentées ci-dessous. Elles sont d'ailleurs ce que le
+script exécute : rien n'oblige à lui faire confiance sur parole.
+
 ### Mode 1 — build CMake, le mode de production
 
 **Qt de la distribution** (voie a) — CMake trouve Qt tout seul :
